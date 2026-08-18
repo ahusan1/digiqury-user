@@ -195,7 +195,8 @@ const extractDriveConfirmToken = (html) => {
   const tokenFromForm = raw.match(/name="confirm"\s+value="([^"]+)"/i)?.[1];
   if (tokenFromForm) return tokenFromForm;
 
-  return '';
+  // Fallback to 't' which often bypasses the Google Drive large file warning
+  return 't';
 };
 
 const extractDriveWarningCookie = (setCookieHeader) => {
@@ -374,10 +375,21 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
-    const arrayBuffer = await upstream.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuffer);
-    res.setHeader('Content-Length', String(fileBuffer.byteLength));
-    return res.status(200).send(fileBuffer);
+    const upstreamLength = upstream.headers.get('content-length');
+    if (upstreamLength && /^\d+$/.test(upstreamLength)) {
+      res.setHeader('Content-Length', upstreamLength);
+    }
+
+    if (upstream.body) {
+      const { Readable } = await import('stream');
+      const nodeStream = Readable.fromWeb(upstream.body);
+      return nodeStream.pipe(res);
+    } else {
+      const arrayBuffer = await upstream.arrayBuffer();
+      const fileBuffer = Buffer.from(arrayBuffer);
+      res.setHeader('Content-Length', String(fileBuffer.byteLength));
+      return res.status(200).send(fileBuffer);
+    }
   } catch (err) {
     console.error('download proxy error:', err);
     return res.status(500).json({
