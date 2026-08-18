@@ -205,6 +205,37 @@ const extractDriveWarningCookie = (setCookieHeader) => {
   return match?.[1] || '';
 };
 
+const resolveDriveDirectUrl = async (targetUrl) => {
+  try {
+    let res = await fetch(targetUrl, { redirect: 'manual' });
+    
+    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+      const loc = res.headers.get('location');
+      if (loc.includes('googleusercontent.com')) return loc;
+    }
+
+    if (res.status === 200 && isHtmlLikeResponse(res)) {
+      const html = await res.text();
+      const token = extractDriveConfirmToken(html);
+      
+      const parsed = new URL(targetUrl);
+      parsed.searchParams.set('confirm', token);
+      
+      const warningCookie = extractDriveWarningCookie(res.headers.get('set-cookie'));
+      const headers = warningCookie ? { Cookie: warningCookie } : undefined;
+      
+      res = await fetch(parsed.toString(), { redirect: 'manual', headers });
+      if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+        const loc = res.headers.get('location');
+        return loc.startsWith('/') ? `https://drive.google.com${loc}` : loc;
+      }
+    }
+  } catch (e) {
+    console.warn('resolveDriveDirectUrl error:', e);
+  }
+  return null;
+};
+
 const fetchUpstreamWithDriveFallback = async (targetUrl, method) => {
   let upstream = await fetch(targetUrl, { method, redirect: 'follow' });
 
@@ -324,6 +355,34 @@ export default async function handler(req, res) {
 
     const sourceUrl = path ? await getSignedStorageUrl({ bucket, path }) : directUrl;
     const targetUrl = normalizeGoogleDriveUrl(sourceUrl);
+    
+    if (isGoogleDriveUrl(targetUrl)) {
+      const directGoogleUrl = await resolveDriveDirectUrl(targetUrl);
+      const finalUrl = directGoogleUrl || targetUrl;
+      
+      if (req.method === 'HEAD') {
+        try {
+          const headRes = await fetch(finalUrl, { method: 'HEAD' });
+          if (headRes.ok) {
+            const cd = headRes.headers.get('content-disposition');
+            const ct = headRes.headers.get('content-type');
+            if (cd) res.setHeader('Content-Disposition', cd);
+            if (ct) res.setHeader('Content-Type', ct);
+            const cl = headRes.headers.get('content-length');
+            if (cl) res.setHeader('Content-Length', cl);
+          } else {
+            res.setHeader('Content-Disposition', 'attachment; filename="download.zip"');
+          }
+        } catch (e) {
+          res.setHeader('Content-Disposition', 'attachment; filename="download.zip"');
+        }
+        return res.status(200).end();
+      }
+
+      res.setHeader('Location', finalUrl);
+      return res.status(302).end();
+    }
+
     let upstream = await fetchUpstreamWithDriveFallback(targetUrl, req.method);
     if (req.method === 'HEAD' && upstream.status === 405) {
       upstream = await fetchUpstreamWithDriveFallback(targetUrl, 'GET');

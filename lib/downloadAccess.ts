@@ -146,8 +146,12 @@ export const resolveDownloadUrl = async (
 
   const defaultFileName = isGoogleDriveUrl(normalizedFileUrl) ? '' : inferFileNameFromPath(normalizedFileUrl);
 
-  // Route all downloads through backend proxy so Content-Type/Disposition are always correct.
+  // Route external downloads through backend proxy, EXCEPT Google Drive links which we handle directly
+  // to avoid Vercel serverless payload limits and local dev routing issues.
   if (/^https?:\/\//i.test(normalizedFileUrl)) {
+    if (isGoogleDriveUrl(normalizedFileUrl)) {
+      return { url: normalizedFileUrl, error: null };
+    }
     const proxied = buildProxyDownloadUrl(normalizedFileUrl, defaultFileName);
     return { url: proxied, error: null };
   }
@@ -178,9 +182,9 @@ export const resolveDownloadUrl = async (
   } catch (err) {
     console.error('Download URL resolution failed:', err);
     // Return a user-friendly error message
-    return { 
-      url: null, 
-      error: 'Download is temporarily unavailable. Please ensure the product file is properly uploaded, or contact support.' 
+    return {
+      url: null,
+      error: 'Download is temporarily unavailable. Please ensure the product file is properly uploaded, or contact support.'
     };
   }
 };

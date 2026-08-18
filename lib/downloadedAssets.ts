@@ -203,10 +203,20 @@ const persistDownloadedAsset = (asset: DownloadedAsset) => {
 };
 
 const triggerWebDownload = (url: string, filename: string) => {
+  if (url.includes('drive.google.com')) {
+    if (Capacitor.isNativePlatform()) {
+      import('@capacitor/browser').then(({ Browser }) => {
+        Browser.open({ url }).catch(console.error);
+      });
+    } else {
+      window.location.assign(url);
+    }
+    return;
+  }
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
-  a.target = '_blank';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -254,7 +264,9 @@ export const downloadAssetToDevice = async (input: {
     downloadedAt: new Date(timestamp).toISOString(),
   };
 
-  if (!Capacitor.isNativePlatform()) {
+  const isGoogleDrive = input.sourceUrl.includes('drive.google.com');
+
+  if (!Capacitor.isNativePlatform() || isGoogleDrive) {
     triggerWebDownload(input.sourceUrl, fileName);
     persistDownloadedAsset(baseRecord);
     return baseRecord;
