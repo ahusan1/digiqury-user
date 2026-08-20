@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Product, UserProfile } from '../types.ts';
 
 interface InvoiceModalProps {
@@ -91,13 +91,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
 
         <div className="invoice-scroll overflow-y-auto flex-grow bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-8 print:p-0 print:bg-white">
           <div id="invoice-sheet" className="mx-auto w-full max-w-[900px] bg-white rounded-xl sm:rounded-2xl border border-gray-100 sm:border-2 shadow-2xl p-4 sm:p-6 md:p-10 print:shadow-none print:border-0 print:rounded-none print:p-0">
-            
+
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-8 pb-4 sm:pb-8 border-b border-gray-200 sm:border-b-2">
-              <div className="min-w-0">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#2874f0] to-blue-600">DIGi QuRY</div>
-                <div className="text-[10px] sm:text-xs text-[#2874f0] font-black uppercase tracking-[0.15em] mt-0.5 sm:mt-1">Digital Assets</div>
-                <div className="text-[10px] sm:text-xs text-gray-600 font-semibold mt-2 sm:mt-3">📧 digiqury@gmail.com</div>
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                <img src="/logo.png" alt="DIGi QuRY Logo" className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain shrink-0 drop-shadow-md" />
+                <div className="min-w-0">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#2874f0] to-blue-600 leading-none">DIGi QuRY</div>
+                  <div className="text-[10px] sm:text-xs text-[#2874f0] font-black uppercase tracking-[0.15em] mt-1">Digital Assets</div>
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-semibold mt-1 sm:mt-2">📧 digiqury@gmail.com</div>
+                </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="inline-block bg-gradient-to-r from-[#2874f0]/10 to-blue-600/10 px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-[#2874f0]/20">
@@ -109,7 +112,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             </div>
 
             {/* Customer & Order Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
               <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/50 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5">
                 <p className="text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 sm:mb-3">👤 Bill To</p>
                 <p className="text-sm sm:text-base font-black text-gray-900 truncate">{user.name || 'Customer'}</p>
@@ -158,7 +161,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             {/* Pricing Breakdown */}
             <div className="mb-4 sm:mb-6 md:mb-8">
               <p className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 sm:mb-4">💰 Pricing</p>
-              
+
               <div className="space-y-1.5 sm:space-y-2">
                 {/* Original Price */}
                 <div className="flex justify-between items-center bg-gray-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-gray-200/60">
@@ -229,7 +232,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             </div>
 
             {/* Footer */}
-            <div className="border-t-2 border-gray-200 pt-3 sm:pt-4 md:pt-6 text-center">
+            <div className="border-t-2 border-gray-200 pt-3 sm:pt-4 md:pt-6 text-center mt-auto print:mt-auto pb-2">
               <p className="text-[8px] sm:text-xs text-gray-600 font-black uppercase tracking-widest">✓ Computer Generated</p>
               <p className="text-[8px] sm:text-xs text-gray-500 font-semibold mt-1 sm:mt-2">Instant delivery • No refund</p>
             </div>
@@ -254,85 +257,115 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
       </div>
 
       <style>{`
-        @page {
-          size: A4 portrait;
-          margin: 10mm;
-        }
-
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0 !important;
+          }
+
           html, body {
             width: 210mm !important;
             height: 297mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #fff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            overflow: hidden !important;
           }
 
           body * {
-            visibility: hidden !important;
+            visibility: hidden;
           }
 
           .invoice-overlay, .invoice-overlay * {
-            visibility: visible !important;
+            visibility: visible;
           }
 
           .invoice-overlay {
             position: absolute !important;
-            inset: 0 !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
             display: block !important;
             background: #fff !important;
             padding: 0 !important;
             margin: 0 !important;
+            overflow: hidden !important;
           }
 
-          .invoice-shell,
-          .invoice-scroll {
-            width: 100% !important;
+          .invoice-shell {
+            width: 210mm !important;
+            height: 297mm !important;
             max-width: none !important;
             max-height: none !important;
-            height: auto !important;
-            overflow: visible !important;
+            display: block !important;
             border: 0 !important;
             border-radius: 0 !important;
             box-shadow: none !important;
             margin: 0 !important;
             padding: 0 !important;
-            background: #fff !important;
+            background: transparent !important;
+            overflow: hidden !important;
+          }
+          
+          .invoice-scroll {
+            width: 210mm !important;
+            height: 297mm !important;
+            max-height: none !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
           }
 
           #invoice-sheet {
-            width: 190mm !important;
-            max-width: 190mm !important;
-            min-height: 277mm !important;
-            max-height: 277mm !important;
-            overflow: hidden !important;
-            margin: 0 auto !important;
-            padding: 7mm !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-width: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            margin: 0 !important;
+            padding: 12mm !important;
             border: 0 !important;
             border-radius: 0 !important;
             box-shadow: none !important;
             box-sizing: border-box !important;
-          }
-
-          .invoice-description {
-            max-height: 26mm !important;
+            page-break-inside: avoid;
             overflow: hidden !important;
           }
 
-          .invoice-download {
-            max-height: 16mm !important;
-            overflow: hidden !important;
+          /* Compress vertical spacing to guarantee 1-page fit */
+          #invoice-sheet [class*="mb-"] { margin-bottom: 2mm !important; }
+          #invoice-sheet [class*="pb-"] { padding-bottom: 2mm !important; }
+          #invoice-sheet [class*="pt-"] { padding-top: 2mm !important; }
+          #invoice-sheet [class*="mt-"] { margin-top: 1mm !important; }
+          #invoice-sheet [class*="p-"] { padding: 2mm !important; }
+          #invoice-sheet [class*="gap-"] { gap: 2mm !important; }
+          
+          #invoice-sheet .mt-auto { margin-top: auto !important; }
+          #invoice-sheet .print\\:mt-auto { margin-top: auto !important; }
+          
+          #invoice-sheet .h-24, #invoice-sheet .sm\\:h-28, #invoice-sheet .md\\:h-32 {
+            height: 20mm !important;
           }
 
-          #invoice-sheet table td,
-          #invoice-sheet table th {
-            padding-top: 2.5mm !important;
-            padding-bottom: 2.5mm !important;
+          /* Force exact colors for all elements inside the invoice */
+          #invoice-sheet * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
-          img {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+          /* Fix line-clamp overlap in print */
+          #invoice-sheet .line-clamp-2 {
+            -webkit-line-clamp: unset !important;
+            display: block !important;
+            overflow: visible !important;
+          }
+
+          .print\\:hidden {
+            display: none !important;
           }
         }
       `}</style>
