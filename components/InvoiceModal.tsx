@@ -1,5 +1,7 @@
 import React from 'react';
 import { Product, UserProfile } from '../types.ts';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -64,8 +66,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
 
   const invoiceNo = `INV-${String(order.id || 'NA').slice(0, 8).toUpperCase()}`;
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownload = () => {
+    const element = document.getElementById('invoice-sheet');
+    if (!element) return;
+    
+    const opt = {
+      margin:       0,
+      filename:     `${invoiceNo}.pdf`,
+      image:        { type: 'jpeg', quality: 1 },
+      html2canvas:  { scale: 2, useCORS: true }, 
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    } as any;
+    
+    html2pdf().set(opt).from(element).save();
   };
 
   const detailRows = [
@@ -89,152 +102,114 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
           </button>
         </div>
 
-        <div className="invoice-scroll overflow-y-auto flex-grow bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-8 print:p-0 print:bg-white">
-          <div id="invoice-sheet" className="mx-auto w-full max-w-[900px] bg-white rounded-xl sm:rounded-2xl border border-gray-100 sm:border-2 shadow-2xl p-4 sm:p-6 md:p-10 print:shadow-none print:border-0 print:rounded-none print:p-0">
-
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-8 pb-4 sm:pb-8 border-b border-gray-200 sm:border-b-2">
-              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
-                <img src="/logo.png" alt="DIGi QuRY Logo" className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain shrink-0 drop-shadow-md" />
-                <div className="min-w-0">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#2874f0] to-blue-600 leading-none">DIGi QuRY</div>
-                  <div className="text-[10px] sm:text-xs text-[#2874f0] font-black uppercase tracking-[0.15em] mt-1">Digital Assets</div>
-                  <div className="text-[10px] sm:text-xs text-gray-600 font-semibold mt-1 sm:mt-2">📧 digiqury@gmail.com</div>
+        <div className="invoice-scroll overflow-auto flex-grow bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-8 print:p-0 print:bg-white">
+          <div id="invoice-sheet" className="mx-auto w-[794px] min-h-[1122px] shrink-0 bg-white p-12 text-slate-800 font-sans relative box-border">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b-2 border-slate-200 pb-8 mb-8">
+              <div className="flex items-center gap-6">
+                <img src="/logo.png" alt="DIGi QuRY" className="w-20 h-20 object-contain" />
+                <div>
+                  <h1 className="text-4xl font-black text-blue-600 tracking-tight m-0 p-0">DIGi QuRY</h1>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mt-1">Digital Assets</p>
+                  <p className="text-sm text-slate-500 mt-2">digiqury@gmail.com</p>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="inline-block bg-gradient-to-r from-[#2874f0]/10 to-blue-600/10 px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-[#2874f0]/20">
-                  <p className="text-[8px] sm:text-xs font-black text-gray-500 uppercase tracking-wider">Invoice</p>
-                  <p className="text-lg sm:text-2xl font-black text-[#2874f0] font-mono mt-1">{invoiceNo}</p>
-                </div>
-                <p className="text-[9px] sm:text-[11px] text-gray-600 font-medium mt-2 sm:mt-4">📅 {formatDate(order.created_at)}</p>
+              <div className="text-right">
+                <h2 className="text-3xl font-black text-slate-300 uppercase tracking-widest mb-2">INVOICE</h2>
+                <p className="text-lg font-bold text-slate-700">{invoiceNo}</p>
+                <p className="text-sm text-slate-500 mt-1">Date: {formatDate(order.created_at)}</p>
               </div>
             </div>
 
-            {/* Customer & Order Info */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
-              <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/50 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5">
-                <p className="text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 sm:mb-3">👤 Bill To</p>
-                <p className="text-sm sm:text-base font-black text-gray-900 truncate">{user.name || 'Customer'}</p>
-                <p className="text-[11px] sm:text-xs text-gray-700 mt-1.5 sm:mt-2.5 font-semibold truncate">{user.email || 'N/A'}</p>
-                <p className="text-[11px] sm:text-xs text-gray-700 mt-1 font-semibold truncate">{user.phone || 'Ph: N/A'}</p>
+            {/* Bill To & Order Details */}
+            <div className="flex justify-between gap-12 mb-10">
+              <div className="flex-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Billed To</h3>
+                <p className="text-lg font-bold text-slate-800">{user.name || 'Customer'}</p>
+                <p className="text-sm text-slate-600 mt-1">{user.email || 'N/A'}</p>
+                <p className="text-sm text-slate-600">{user.phone || 'N/A'}</p>
               </div>
-
-              <div className="bg-gradient-to-br from-emerald-50/50 to-green-50/50 border border-emerald-100/50 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-5">
-                <p className="text-[8px] sm:text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1.5 sm:mb-3">📋 Order</p>
-                <p className="text-[10px] sm:text-xs text-gray-700 font-semibold break-all">ID: <span className="font-mono text-gray-900 font-black">{order.id || 'N/A'}</span></p>
-                <p className="text-[10px] sm:text-xs text-gray-700 font-semibold mt-1 sm:mt-2 break-all">Pay: <span className="font-mono text-gray-900 font-black">{order.payment_id || 'N/A'}</span></p>
-                <div className="mt-1.5 sm:mt-2.5 flex items-center gap-1.5 sm:gap-2">
-                  <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500"></span>
-                  <span className="text-[10px] sm:text-xs font-black text-green-700 uppercase">{order.status || 'PAID'}</span>
+              <div className="flex-1">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Order Details</h3>
+                <div className="grid grid-cols-[100px_1fr] gap-2 text-sm">
+                  <span className="font-bold text-slate-500">Order ID:</span>
+                  <span className="font-mono text-slate-800 break-all">{order.id}</span>
+                  <span className="font-bold text-slate-500">Payment ID:</span>
+                  <span className="font-mono text-slate-800 break-all">{order.payment_id || 'N/A'}</span>
+                  <span className="font-bold text-slate-500">Status:</span>
+                  <span className="font-bold text-green-600 uppercase">Paid</span>
                 </div>
               </div>
             </div>
 
-            {/* Product Details Card */}
-            <div className="mb-4 sm:mb-6 md:mb-8 bg-gradient-to-br from-gray-50/50 to-gray-100/30 border border-gray-200/60 rounded-lg sm:rounded-xl md:rounded-2xl p-3 sm:p-4 md:p-6">
-              <p className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 sm:mb-4">📆 Product</p>
-              <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] md:grid-cols-[140px_1fr] gap-3 sm:gap-4 md:gap-5">
-                <div className="h-24 sm:h-28 md:h-32 bg-white border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl p-1 sm:p-2 flex items-center justify-center overflow-hidden hover:border-[#2874f0] transition-colors">
-                  {product?.preview_image ? (
-                    <img src={product.preview_image} alt={product?.title || 'Preview'} className="max-w-full max-h-full object-contain" />
-                  ) : (
-                    <div className="text-[8px] text-gray-400 font-black uppercase">No Image</div>
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-sm sm:text-base md:text-lg font-black text-gray-900 leading-snug line-clamp-2">{product?.title || 'Unknown'}</p>
-                  <p className="text-[10px] sm:text-xs text-gray-600 mt-1 sm:mt-2.5 leading-relaxed font-medium line-clamp-2">{product?.description || 'N/A'}</p>
-                  <div className="mt-2 sm:mt-3 md:mt-4 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5">
-                    {detailRows.map((row) => (
-                      <div key={row.label} className="bg-white border border-gray-200/80 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 md:py-2.5 hover:shadow-sm transition-shadow">
-                        <p className="text-[7px] sm:text-[8px] font-black text-gray-500 uppercase tracking-widest">{row.label}</p>
-                        <p className="text-[10px] sm:text-xs font-bold text-gray-900 mt-1 break-all">{row.value}</p>
+            {/* Product Table */}
+            <div className="mb-10">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="py-3 font-black text-slate-400 uppercase tracking-widest text-xs">Item Description</th>
+                    <th className="py-3 font-black text-slate-400 uppercase tracking-widest text-xs text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-slate-100">
+                    <td className="py-5">
+                      <p className="font-bold text-slate-800 text-lg mb-1">{product?.title || 'Unknown Product'}</p>
+                      <p className="text-sm text-slate-500 max-w-[500px] leading-relaxed break-words">{product?.description || 'N/A'}</p>
+                      <div className="flex flex-wrap gap-4 mt-3">
+                        {detailRows.map(row => (
+                          <div key={row.label} className="bg-slate-50 px-2 py-1 rounded text-xs border border-slate-100">
+                            <span className="font-bold text-slate-400 mr-1">{row.label}:</span>
+                            <span className="font-medium text-slate-700">{row.value}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                    </td>
+                    <td className="py-5 text-right font-bold text-slate-800 text-lg align-top">
+                      ₹ {formatInr(originalPrice)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            {/* Pricing Breakdown */}
-            <div className="mb-4 sm:mb-6 md:mb-8">
-              <p className="text-[8px] sm:text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 sm:mb-4">💰 Pricing</p>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                {/* Original Price */}
-                <div className="flex justify-between items-center bg-gray-50 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-gray-200/60">
-                  <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700">Original Price</span>
-                  <span className="text-[10px] sm:text-xs md:text-sm font-black text-gray-900">₹ {formatInr(originalPrice)}</span>
+            {/* Pricing Summary */}
+            <div className="flex justify-end mb-12">
+              <div className="w-[350px]">
+                <div className="flex justify-between py-2 text-slate-600">
+                  <span>Subtotal</span>
+                  <span className="font-bold">₹ {formatInr(originalPrice)}</span>
                 </div>
-
-                {/* Product Discount */}
                 {productDiscount > 0 && (
-                  <div className="flex justify-between items-center bg-orange-50/60 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-orange-200/60">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-orange-600 font-black text-sm">📉</span>
-                      <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700">Store Discount</span>
-                    </div>
-                    <span className="text-[10px] sm:text-xs md:text-sm font-black text-orange-600">- ₹ {formatInr(productDiscount)}</span>
+                  <div className="flex justify-between py-2 text-orange-500">
+                    <span>Store Discount</span>
+                    <span className="font-bold">- ₹ {formatInr(productDiscount)}</span>
                   </div>
                 )}
-
-                {/* Divider */}
-                <div className="h-0.5 bg-gradient-to-r from-transparent via-gray-300 to-transparent my-1 sm:my-2"></div>
-
-                {/* Unit Price */}
-                <div className="flex justify-between items-center bg-white p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 border-[#2874f0]/20">
-                  <span className="text-[10px] sm:text-xs md:text-sm font-bold text-gray-800">Unit Price</span>
-                  <span className="text-sm sm:text-base md:text-lg font-black text-[#2874f0]">₹ {formatInr(unitPrice)}</span>
-                </div>
-
-                {/* Coupon Section */}
                 {hasCoupon && (
-                  <>
-                    <div className="flex justify-between items-center bg-green-50/60 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 border-green-200/60 mt-2 sm:mt-3">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                        <span className="text-base sm:text-lg font-black text-green-600 flex-shrink-0">🎟️</span>
-                        <div className="min-w-0">
-                          <p className="text-[8px] sm:text-[9px] font-black text-green-700 uppercase tracking-widest">Coupon</p>
-                          <p className="text-[10px] sm:text-xs font-mono font-black text-green-800 mt-0.5 truncate">{order?.coupon_code}</p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-black text-green-600 flex-shrink-0">✓</span>
-                    </div>
-
-                    <div className="flex justify-between items-center bg-green-50/60 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-green-200/60">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-green-600 font-black text-sm">✂️</span>
-                        <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700">Coupon Discount</span>
-                      </div>
-                      <span className="text-[10px] sm:text-xs md:text-sm font-black text-green-600">- ₹ {formatInr(discountAmount)}</span>
-                    </div>
-                  </>
-                )}
-
-                {!hasCoupon && discountAmount > 0 && (
-                  <div className="flex justify-between items-center bg-green-50/60 p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border border-green-200/60">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-green-600 font-black text-sm">✂️</span>
-                      <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700">Discount</span>
-                    </div>
-                    <span className="text-[10px] sm:text-xs md:text-sm font-black text-green-600">- ₹ {formatInr(discountAmount)}</span>
+                  <div className="flex justify-between py-2 text-green-600">
+                    <span>Coupon Discount</span>
+                    <span className="font-bold">- ₹ {formatInr(discountAmount)}</span>
                   </div>
                 )}
-
-                {/* Final Total */}
-                <div className="flex justify-between items-center bg-gradient-to-r from-[#2874f0]/10 to-blue-600/10 p-2.5 sm:p-3 md:p-5 rounded-lg sm:rounded-xl border-2 border-[#2874f0]/40 mt-2 sm:mt-3 md:mt-4">
-                  <span className="text-xs sm:text-sm md:text-base font-black text-gray-900 uppercase">💳 You Paid</span>
-                  <span className="text-base sm:text-lg md:text-2xl font-black text-[#2874f0]">₹ {formatInr(finalPrice)}</span>
+                {!hasCoupon && discountAmount > 0 && (
+                  <div className="flex justify-between py-2 text-green-600">
+                    <span>Discount</span>
+                    <span className="font-bold">- ₹ {formatInr(discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-4 mt-2 border-t-2 border-slate-200">
+                  <span className="text-xl font-black text-slate-800">Total Paid</span>
+                  <span className="text-2xl font-black text-blue-600">₹ {formatInr(finalPrice)}</span>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t-2 border-gray-200 pt-3 sm:pt-4 md:pt-6 text-center mt-auto print:mt-auto pb-2">
-              <p className="text-[8px] sm:text-xs text-gray-600 font-black uppercase tracking-widest">✓ Computer Generated</p>
-              <p className="text-[8px] sm:text-xs text-gray-500 font-semibold mt-1 sm:mt-2">Instant delivery • No refund</p>
+            <div className="absolute bottom-12 left-12 right-12 text-center border-t border-slate-200 pt-6">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">✓ Computer Generated Document</p>
+              <p className="text-xs text-slate-500 mt-2">Instant delivery • No refunds on digital assets</p>
+              <p className="text-xs text-slate-400 mt-1">Thank you for your business!</p>
             </div>
           </div>
         </div>
@@ -247,11 +222,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
             Close
           </button>
           <button
-            onClick={handlePrint}
+            onClick={handleDownload}
             className="px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-[#2874f0] to-blue-600 text-white rounded-lg sm:rounded-xl text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 hover:shadow-xl"
           >
-            <i className="fas fa-print text-sm"></i>
-            Print
+            <i className="fas fa-download text-sm"></i>
+            Download
           </button>
         </div>
       </div>
