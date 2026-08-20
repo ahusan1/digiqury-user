@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, UserProfile } from '../types.ts';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
@@ -11,6 +11,29 @@ interface InvoiceModalProps {
 }
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, order, user }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        // 794 is the exact width of our A4 invoice sheet, add 40px for padding
+        if (containerWidth < 834) {
+          setScale(containerWidth / 834);
+        } else {
+          setScale(1);
+        }
+      }
+    };
+    
+    if (isOpen) {
+      updateScale();
+      window.addEventListener('resize', updateScale);
+      return () => window.removeEventListener('resize', updateScale);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !order) return null;
 
   const product: Product = Array.isArray(order.product) ? order.product[0] : order.product;
@@ -102,9 +125,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
           </button>
         </div>
 
-        <div className="invoice-scroll overflow-auto flex-grow bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-8 print:p-0 print:bg-white">
-          <div id="invoice-sheet" className="mx-auto w-[794px] min-h-[1122px] shrink-0 bg-white p-12 text-slate-800 font-sans relative box-border">
-            {/* Header */}
+        <div ref={containerRef} className="invoice-scroll overflow-y-auto overflow-x-hidden flex-grow bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-4 md:p-5 flex justify-center items-start print:p-0 print:bg-white">
+          <div 
+            style={{ 
+              transform: `scale(${scale})`, 
+              transformOrigin: 'top center',
+              width: '794px',
+              height: `${scale * 1122}px`,
+              transition: 'transform 0.2s ease-out'
+            }}
+          >
+            <div id="invoice-sheet" className="w-[794px] min-h-[1122px] shrink-0 bg-white p-12 text-slate-800 font-sans relative box-border shadow-2xl print:shadow-none">
+              {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-slate-200 pb-8 mb-8">
               <div className="flex items-center gap-6">
                 <img src="/logo.png" alt="DIGi QuRY" className="w-20 h-20 object-contain" />
@@ -211,6 +243,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, ord
               <p className="text-xs text-slate-500 mt-2">Instant delivery • No refunds on digital assets</p>
               <p className="text-xs text-slate-400 mt-1">Thank you for your business!</p>
             </div>
+          </div>
           </div>
         </div>
 
